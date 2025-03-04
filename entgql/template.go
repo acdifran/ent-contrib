@@ -147,8 +147,11 @@ func gqlIDType(nodes []*gen.Type, defaultType *field.TypeInfo) (*idType, error) 
 			continue
 		}
 		// Expect type to be un/marshaller to GraphQL scalar.
-		if !n.ID.HasGoType() || !n.ID.Type.RType.Implements(marshalerType) || !n.ID.Type.RType.Implements(unmarshalerType) {
-			return nil, errors.New("entgql: mixed id types must be type string or implement the graphql.Marshaller/graphql.Unmarshaller interfaces")
+		if !n.ID.HasGoType() || !n.ID.Type.RType.Implements(marshalerType) ||
+			!n.ID.Type.RType.Implements(unmarshalerType) {
+			return nil, errors.New(
+				"entgql: mixed id types must be type string or implement the graphql.Marshaller/graphql.Unmarshaller interfaces",
+			)
 		}
 	}
 	return &idType{
@@ -461,7 +464,13 @@ func orderFields(n *gen.Type) ([]*OrderTerm, error) {
 		case ant.OrderField == fmt.Sprintf("%s_COUNT", name):
 			// Validate that the edge has a count ordering.
 			if _, err := e.OrderCountName(); err != nil {
-				return nil, fmt.Errorf("entgql: invalid order field %s defined on edge %s.%s: %w", ant.OrderField, n.Name, e.Name, err)
+				return nil, fmt.Errorf(
+					"entgql: invalid order field %s defined on edge %s.%s: %w",
+					ant.OrderField,
+					n.Name,
+					e.Name,
+					err,
+				)
 			}
 			terms = append(terms, &OrderTerm{
 				Owner: n,
@@ -470,18 +479,29 @@ func orderFields(n *gen.Type) ([]*OrderTerm, error) {
 				Edge:  e,
 				Count: true,
 			})
-		case strings.HasPrefix(ant.OrderField, name+"_"):
+		case strings.HasPrefix(ant.OrderField, "EDGEFIELD_"+name+"_"):
 			// Validate that the edge has a edge field ordering.
 			if _, err := e.OrderFieldName(); err != nil {
-				return nil, fmt.Errorf("entgql: invalid order field %s defined on edge %s.%s: %w", ant.OrderField, n.Name, e.Name, err)
+				return nil, fmt.Errorf(
+					"entgql: invalid order field %s defined on edge %s.%s: %w",
+					ant.OrderField,
+					n.Name,
+					e.Name,
+					err,
+				)
 			}
-			ef := strings.TrimPrefix(ant.OrderField, name+"_")
+			ef := strings.TrimPrefix(ant.OrderField, "EDGEFIELD_"+name+"_")
 			idx := slices.IndexFunc(e.Type.Fields, func(f *gen.Field) bool {
 				ant, err := annotation(f.Annotations)
 				return err == nil && ant.OrderField == ef
 			})
 			if idx == -1 {
-				return nil, fmt.Errorf("entgql: order field %s defined on edge %s.%s was not found on its reference", ant.OrderField, n.Name, e.Name)
+				return nil, fmt.Errorf(
+					"entgql: order field %s defined on edge %s.%s was not found on its reference",
+					ant.OrderField,
+					n.Name,
+					e.Name,
+				)
 			}
 			terms = append(terms, &OrderTerm{
 				Owner: n,
@@ -491,7 +511,11 @@ func orderFields(n *gen.Type) ([]*OrderTerm, error) {
 				Field: e.Type.Fields[idx],
 			})
 		default:
-			return nil, fmt.Errorf("entgql: invalid order field defined on edge %s.%s", n.Name, e.Name)
+			return nil, fmt.Errorf(
+				"entgql: invalid order field defined on edge %s.%s",
+				n.Name,
+				e.Name,
+			)
 		}
 	}
 	return terms, nil
@@ -632,7 +656,10 @@ func (p *PaginationNames) OrderInputDef() *ast.Definition {
 	}
 }
 
-func (p *PaginationNames) ConnectionField(name string, hasOrderBy, multiOrder, hasWhereInput bool) *ast.FieldDefinition {
+func (p *PaginationNames) ConnectionField(
+	name string,
+	hasOrderBy, multiOrder, hasWhereInput bool,
+) *ast.FieldDefinition {
 	def := &ast.FieldDefinition{
 		Name: name,
 		Type: ast.NonNullNamedType(p.Connection, nil),
@@ -665,16 +692,22 @@ func (p *PaginationNames) ConnectionField(name string, hasOrderBy, multiOrder, h
 			orderT = ast.ListType(ast.NonNullNamedType(p.Order, nil), nil)
 		}
 		def.Arguments = append(def.Arguments, &ast.ArgumentDefinition{
-			Name:        "orderBy",
-			Type:        orderT,
-			Description: fmt.Sprintf("Ordering options for %s returned from the connection.", plural(p.Node)),
+			Name: "orderBy",
+			Type: orderT,
+			Description: fmt.Sprintf(
+				"Ordering options for %s returned from the connection.",
+				plural(p.Node),
+			),
 		})
 	}
 	if hasWhereInput {
 		def.Arguments = append(def.Arguments, &ast.ArgumentDefinition{
-			Name:        "where",
-			Type:        ast.NamedType(p.WhereInput, nil),
-			Description: fmt.Sprintf("Filtering options for %s returned from the connection.", plural(p.Node)),
+			Name: "where",
+			Type: ast.NamedType(p.WhereInput, nil),
+			Description: fmt.Sprintf(
+				"Filtering options for %s returned from the connection.",
+				plural(p.Node),
+			),
 		})
 	}
 
